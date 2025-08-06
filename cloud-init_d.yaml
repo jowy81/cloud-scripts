@@ -1,0 +1,30 @@
+#cloud-config
+package_update: true
+package_upgrade: true
+packages:
+  - ca-certificates
+  - curl
+  - htop
+  - jq
+  - ufw
+  - iotop
+  - net-tools
+  - iputils-ping
+  - nano
+  - tree
+
+runcmd:
+  - curl -s https://raw.githubusercontent.com/jowy81/cloud-scripts/main/scripts/install_docker.sh | bash
+
+users:
+  - name: app
+    groups: docker
+    shell: /bin/bash
+    sudo: false
+    ssh-authorized-keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFfmTNW2LOAcOyaBHLvcqvKYn9IiQQBDPItSn745oqhO
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAOGTAZei/8qMu6DhXrtzrB4AE55nRQ+6p4LlT9U7H1R
+  - name: root
+    ssh-authorized-keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFfmTNW2LOAcOyaBHLvcqvKYn9IiQQBDPItSn745oqhO
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAOGTAZei/8qMu6DhXrtzrB4AE55nRQ+6p4LlT9U7H1R 

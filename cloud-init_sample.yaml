@@ -1,0 +1,60 @@
+#cloud-config
+package_update: true
+package_upgrade: true
+packages:
+  - ca-certificates
+  - curl
+  - htop
+  - jq
+  - ufw
+
+write_files:
+  - path: /etc/sysctl.d/99-custom.conf
+    content: |
+      vm.swappiness=10
+      vm.max_map_count=262144
+    permissions: '0644'
+  - path: /etc/security/limits.conf
+    content: |
+      * soft nofile 1048576
+      * hard nofile 1048576
+      root soft nofile 1048576
+      root hard nofile 1048576
+    permissions: '0644'
+  - path: /etc/ufw/after.rules
+    content: |
+      # Allow Docker traffic
+      *filter
+      :DOCKER-USER - [0:0]
+      -A DOCKER-USER -i docker0 -j ACCEPT
+      -A DOCKER-USER -o docker0 -j ACCEPT
+      -A DOCKER-USER -j RETURN
+      COMMIT
+    permissions: '0640'
+
+runcmd:
+  - sysctl -p /etc/sysctl.d/99-custom.conf
+  - curl -s https://raw.githubusercontent.com/jowy81/cloud-scripts/main/scripts/install_docker.sh | bash
+  - curl -s https://raw.githubusercontent.com/jowy81/cloud-scripts/main/scripts/install_node_exporter.sh | bash
+  - ufw allow 22/tcp
+  - ufw allow 80/tcp
+  - ufw allow 443/tcp
+  - ufw allow 9100/tcp
+  - ufw default deny incoming
+  - ufw default allow outgoing
+  - echo "y" | ufw enable
+  - sed -i 's/DEFAULT_FORWARD_POLICY="DROP"/DEFAULT_FORWARD_POLICY="ACCEPT"/' /etc/default/ufw
+  - systemctl restart ufw
+
+users:
+  - name: app
+    groups: docker
+    shell: /bin/bash
+    sudo: false
+    ssh-authorized-keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFfmTNW2LOAcOyaBHLvcqvKYn9IiQQBDPItSn745oqhO
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAOGTAZei/8qMu6DhXrtzrB4AE55nRQ+6p4LlT9U7H1R
+  - name: root
+    ssh-authorized-keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFfmTNW2LOAcOyaBHLvcqvKYn9IiQQBDPItSn745oqhO
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAOGTAZei/8qMu6DhXrtzrB4AE55nRQ+6p4LlT9U7H1R
